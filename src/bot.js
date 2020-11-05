@@ -1,10 +1,12 @@
-const { Client } = require('discord.js');
+const { Client, MessageEmbed } = require('discord.js');
 const getPairPrice = require('./prices/get-pair-price');
 const getTokenPrice = require('./prices/get-token-price');
+const getWeeklyNew = require('./new-pairs/get-weekly-new');
 const { evaluate } = require('mathjs');
 
 const client = new Client();
 const prefix = '!';
+const privatePrefix = '#';
 
 client.once('ready', () => {
 	console.log('bot ready')
@@ -15,7 +17,14 @@ const data = {
 }
 
 client.on('message', async message => {
-	if (!message.content.startsWith(prefix) || message.author.bot) return;
+  if (!(message.content.startsWith(prefix) || message.content.startsWith(privatePrefix)) || message.author.bot) return;
+  
+  let sendingFn = message.channel;
+
+  if (message.content.startsWith(privatePrefix)) {
+    console.log('got here');
+    sendingFn = message.author;
+  }
 
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
@@ -24,7 +33,7 @@ client.on('message', async message => {
     async function getPairPriceAsync() {
       const response = await getPairPrice(args[0], +args[1]);
 
-      message.channel.send(response);
+      sendingFn.send(response);
     }
 
     getPairPriceAsync();
@@ -34,7 +43,7 @@ client.on('message', async message => {
     async function getTokenPriceAsync() {
       const response = await getTokenPrice(args[0]);
 
-      message.channel.send(response);
+      sendingFn.send(response);
     }
 
     getTokenPriceAsync();
@@ -45,27 +54,48 @@ client.on('message', async message => {
 
     data[message.author.id].push(args[0]);
 
-    message.channel.send(`Added ${args[0]}`);
+    sendingFn.send(`Added ${args[0]}`);
   }
 
   if (command === 'watchlist') {
-    message.channel.send(data[message.author.id].join(', '))
+    sendingFn.send(data[message.author.id].join(', '))
   }
 
   if (command === 'calc') {
     const answer = evaluate(args[0])
 
-    message.channel.send(args[0] + ' = ' + answer)
+    sendingFn.send(args[0] + ' = ' + answer)
+  }
+
+  if (command === 'test') {
+    sendingFn.send({
+      embed: new MessageEmbed()
+        .setTitle("DiscordBot Help")
+        .setColor("#42b6f4")
+        .addField("help cosmetic - Cosmetic help.", "All cosmetic commands")
+    });
+  }
+
+  if (command === 'recent') {
+    getWeeklyNew(sendingFn, args[0])
+  }
+
+  if (command === 'alive') {
+    sendingFn.send('I am ALIVE!');
   }
 
   if (command === 'help') {
-    const response = `Hi ${message.author.username}
-- For pair information type - !pair USDC-ETH
-- For token USD Price - !price ETH
-- For Math Calculations - !calc 50/23 (make sure no spaces)
-    `
-
-    message.channel.send(response);
+    sendingFn.send({
+      embed: new MessageEmbed()
+        .setTitle("DiscordBot Help")
+        .setColor("#42b6f4")
+        .addField("To get Private response use # instead of !", "#pair USDC-ETH")
+        .addField("To check if bot is alive", "!alive")
+        .addField("For Pair Information", "!pair USDC-ETH")
+        .addField("For USD Price Information", "!price USDC")
+        .addField("For Math Calculations", "!calc 50/23\n(make sure no spaces)")
+        .addField("For new pairs listed in uniswap within 48 hours", "!recent 500000\n(the number is a filter to only show if the liquidity is above 500000USD)")
+    });
   }
 });
 
