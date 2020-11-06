@@ -2,6 +2,7 @@ const { Client, MessageEmbed } = require('discord.js');
 const getPairPrice = require('./prices/get-pair-price');
 const getTokenPrice = require('./prices/get-token-price');
 const getWeeklyNew = require('./new-pairs/get-weekly-new');
+const pollBTC = require('./prices/poll-btc');
 const { evaluate } = require('mathjs');
 
 const client = new Client();
@@ -9,6 +10,9 @@ const prefix = '!';
 const privatePrefix = '#';
 
 client.once('ready', () => {
+  pollBTC((price) => {
+    client.user.setPresence({ activity: { name: `BTC @ ${price}` }, status: 'idle' })
+  })
 	console.log('bot ready')
 });
 
