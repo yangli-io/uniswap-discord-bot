@@ -26,6 +26,7 @@ async function getPrice(id, currency) {
       return {
         color,
         message,
+        name: data.name,
       }
     }
   } catch (e) {
@@ -47,11 +48,11 @@ module.exports = async function getTokenPrice(sendingFn, tokenRaw, currencyRaw =
 
   if (foundToken) {
     const id = foundToken.id;
-    const { message, color } = await getPrice(id, currency);
+    const { message, color, name } = await getPrice(id, currency);
 
     const msg = new MessageEmbed()
       .setColor(color)
-      .addField("BTC - USD", message)
+      .addField(`${name} - ${currency.toUpperCase()}`, message)
 
     sendingFn.send(msg)
   } else {
