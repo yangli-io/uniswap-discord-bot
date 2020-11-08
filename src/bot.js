@@ -4,6 +4,7 @@ const getTokenPrice = require('./prices/get-token-price');
 const getWeeklyNew = require('./new-pairs/get-weekly-new');
 const pollBTC = require('./prices/poll-btc');
 const { evaluate } = require('mathjs');
+const getCoingeckoPrice = require('./prices/coingecko-price')
 
 const client = new Client();
 const prefix = '!';
@@ -26,7 +27,6 @@ client.on('message', async message => {
   let sendingFn = message.channel;
 
   if (message.content.startsWith(privatePrefix)) {
-    console.log('got here');
     sendingFn = message.author;
   }
 
@@ -53,6 +53,10 @@ client.on('message', async message => {
     getTokenPriceAsync();
   }
 
+  if (command === 'gecko') {
+    getCoingeckoPrice(sendingFn, args[0], args[1])
+  }
+
   if (command === 'watchlist-add') {
     data[message.author.id] = data[message.author.id] || [];
 
@@ -69,15 +73,6 @@ client.on('message', async message => {
     const answer = evaluate(args[0])
 
     sendingFn.send(args[0] + ' = ' + answer)
-  }
-
-  if (command === 'test') {
-    sendingFn.send({
-      embed: new MessageEmbed()
-        .setTitle("DiscordBot Help")
-        .setColor("#42b6f4")
-        .addField("help cosmetic - Cosmetic help.", "All cosmetic commands")
-    });
   }
 
   if (command === 'recent') {

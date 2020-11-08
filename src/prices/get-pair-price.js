@@ -2,7 +2,6 @@ const getTokenId = require('./get-token-id');
 const getPairReserves = require('./get-pair-reserves');
 const convertEth = require('../utils/token');
 
-
 module.exports = async function getPairPrice(pair, amount) {
   const [baseRaw, quoteRaw] = pair.split('-');
 
