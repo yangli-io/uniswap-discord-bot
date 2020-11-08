@@ -1,20 +1,6 @@
 const fetch = require('node-fetch');
-const { Client, MessageEmbed } = require('discord.js');
-
-let list = [];
-async function getList() {
-  if (list.length) return list;
-  const res = await fetch('https://api.coingecko.com/api/v3/coins/list');
-
-  if (res.ok) {
-    const data = await res.json();
-
-    list = data;
-    return data;
-  }
-
-  return []
-}
+const { MessageEmbed } = require('discord.js');
+const getList = require('../coingecko/get-token-list');
 
 async function getPrice(id, currency) {
   try {

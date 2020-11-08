@@ -1,33 +1,60 @@
-const fetchGraph = require('../utils/fetch-graph');
-const getTokenId = require('./get-token-id');
-const BigNumber = require('bignumber.js');
-const convertEth = require('../utils/token');
+const fetch = require('node-fetch')
+const { MessageEmbed } = require('discord.js');
+const getList = require('../coingecko/get-token-list')
 
-const priceQuery = (tokenId) => `
-{
-  tokenDayDatas (where: { token: "${tokenId}" })  {
-    id
-    date
-    priceUSD
-    token {
-      symbol
+async function getPrice(id, currency) {
+  try {
+    const res = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&ids=${id}&order=market_cap_desc&per_page=100&page=1&sparkline=false`);
+
+    if (res.ok) {
+      const [data] = await res.json();
+
+      let message = new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(data.current_price)
+      message += " | "
+
+      let color = '#777777'
+      if (data.price_change_percentage_24h > 0) {
+        color = '#57bd0f'
+        message += "▲ "
+      } else if (data.price_change_percentage_24h < 0) {
+        color = '#ed5565'
+        message += "▼ "
+      }
+
+      message += `${data.price_change_percentage_24h}% (24H)`
+
+      return {
+        color,
+        message,
+      }
     }
+  } catch (e) {
+    console.error(e);
   }
 }
-`
 
-module.exports = async function getTokenPrice(tokenRaw) {
-  const token = convertEth(tokenRaw);
+module.exports = async function getTokenPrice(sendingFn, tokenRaw, currencyRaw = 'USD') {
+  if (!tokenRaw) {
+    return sendingFn.send('Enter a token please')
+  }
 
-  const tokenId = await getTokenId(token);
+  const token = tokenRaw.toLowerCase();
+  const currency = currencyRaw.toLowerCase();
 
-  if (!tokenId) return `${token} is not a valid token`;
+  const tokenList = await getList();
 
-  const { tokenDayDatas } = await fetchGraph(priceQuery(tokenId));
+  const foundToken = tokenList.find(({ symbol }) => symbol === token);
 
-  const currentPrice = tokenDayDatas[tokenDayDatas.length - 1];
-  
-  const value = new BigNumber(currentPrice.priceUSD);
+  if (foundToken) {
+    const id = foundToken.id;
+    const { message, color } = await getPrice(id, currency);
 
-  return `${tokenRaw} - $${value.toFormat(4)}`;
+    const msg = new MessageEmbed()
+      .setColor(color)
+      .addField("BTC - USD", message)
+
+    sendingFn.send(msg)
+  } else {
+    sendingFn.send(`can't find "${tokenRaw}" from coingecko`)
+  }
 }

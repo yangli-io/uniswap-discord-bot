@@ -23,15 +23,15 @@ const data = {
 
 client.on('message', async message => {
   if (!(message.content.startsWith(prefix) || message.content.startsWith(privatePrefix)) || message.author.bot) return;
-  
-  let sendingFn = message.channel;
 
-  if (message.content.startsWith(privatePrefix)) {
-    sendingFn = message.author;
-  }
+  let sendingFn = message.channel;
 
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
+
+  if (command === 'private') {
+    message.author.send('Hello! Info bot at your service')
+  }
 
   if (command === 'pair') {
     async function getPairPriceAsync() {
@@ -44,13 +44,7 @@ client.on('message', async message => {
   }
 
   if (command === 'price') {
-    async function getTokenPriceAsync() {
-      const response = await getTokenPrice(args[0]);
-
-      sendingFn.send(response);
-    }
-
-    getTokenPriceAsync();
+    getTokenPrice(sendingFn, args[0], args[1]);
   }
 
   if (command === 'gecko') {
@@ -91,7 +85,8 @@ client.on('message', async message => {
         .addField("To get Private response use # instead of !", "#pair USDC-ETH")
         .addField("To check if bot is alive", "!alive")
         .addField("For Pair Information", "!pair USDC-ETH")
-        .addField("For USD Price Information", "!price USDC")
+        .addField("For USD Price Information", "!price USDC aud")
+        .addField("For past 48 price changes", "!gecko ETH hkd")
         .addField("For Math Calculations", "!calc 50/23\n(make sure no spaces)")
         .addField("For new pairs listed in uniswap within 48 hours", "!recent 500000\n(the number is a filter to only show if the liquidity is above 500000USD)")
     });
